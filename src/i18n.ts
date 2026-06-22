@@ -1,0 +1,180 @@
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+
+export const LANGUAGE_STORAGE_KEY = 'pim.language'
+
+const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+
+i18n.use(initReactI18next).init({
+  resources: {
+    en: {
+      translation: {
+        app: {
+          title: 'Project Information Management',
+          help: 'Help',
+          logout: 'Log out',
+          userActions: 'User actions',
+          primaryNavigation: 'Primary navigation',
+        },
+        nav: {
+          projectsList: 'Projects List',
+          editProject: 'Edit Project',
+          new: 'New',
+          project: 'Project',
+          customer: 'Customer',
+          supplier: 'Supplier',
+        },
+        project: {
+          listTitle: 'Projects List',
+          newTitle: 'New Project',
+          editTitle: 'Edit Project information',
+          number: 'Project Number',
+          name: 'Project name',
+          customer: 'Customer',
+          group: 'Group',
+          members: 'Members',
+          status: 'Status',
+          startDate: 'Start date',
+          endDate: 'End date',
+          searchPlaceholder: 'Project number, name, customer name',
+          statusPlaceholder: 'Project status',
+          searchButton: 'Search Project',
+          resetSearch: 'Reset Search',
+          loading: 'Loading project...',
+          loadingProjects: 'Loading projects...',
+          noProjects: 'No projects found',
+          createButton: 'Create Project',
+          saveButton: 'Save Project',
+          cancelButton: 'Cancel',
+          selectGroup: 'Select group',
+          loadingGroups: 'Loading...',
+          groupLabel: 'Group {{id}}',
+          groupLabelWithLeader: 'Group {{id}} - {{visa}}',
+          projectsTable: 'Projects',
+        },
+        table: {
+          selection: 'Selection',
+          number: 'Number',
+          name: 'Name',
+          status: 'Status',
+          customer: 'Customer',
+          startDate: 'Start Date',
+          delete: 'Delete',
+          selectProject: 'Select project {{projectNumber}}',
+          deleteProject: 'Delete project {{projectNumber}}',
+        },
+        status: {
+          NEW: 'New',
+          PLA: 'Planned',
+          INP: 'In progress',
+          FIN: 'Finished',
+        },
+        members: {
+          placeholder: 'DTH, BHU, JHV',
+          searching: 'Searching...',
+          remove: 'Remove {{visa}}',
+        },
+        validation: {
+          mandatoryFields: 'Please enter all the mandatory fields (*)',
+          required: 'Required',
+        },
+        pagination: {
+          label: 'Pagination',
+          previous: 'Previous page',
+          next: 'Next page',
+        },
+        error: {
+          fallback: 'Request failed. Please make sure the backend is running on port 8080.',
+        },
+      },
+    },
+    vi: {
+      translation: {
+        app: {
+          title: 'Quản lý thông tin dự án',
+          help: 'Trợ giúp',
+          logout: 'Đăng xuất',
+          userActions: 'Hành động người dùng',
+          primaryNavigation: 'Điều hướng chính',
+        },
+        nav: {
+          projectsList: 'Danh sách dự án',
+          editProject: 'Chỉnh sửa dự án',
+          new: 'Tạo mới',
+          project: 'Dự án',
+          customer: 'Khách hàng',
+          supplier: 'Nhà cung cấp',
+        },
+        project: {
+          listTitle: 'Danh sách dự án',
+          newTitle: 'Dự án mới',
+          editTitle: 'Thông tin chỉnh sửa dự án',
+          number: 'Mã dự án',
+          name: 'Tên dự án',
+          customer: 'Khách hàng',
+          group: 'Nhóm',
+          members: 'Thành viên',
+          status: 'Trạng thái',
+          startDate: 'Ngày bắt đầu',
+          endDate: 'Ngày kết thúc',
+          searchPlaceholder: 'Mã dự án, tên dự án, tên khách hàng',
+          statusPlaceholder: 'Trạng thái dự án',
+          searchButton: 'Tìm dự án',
+          resetSearch: 'Xóa tìm kiếm',
+          loading: 'Đang tải dự án...',
+          loadingProjects: 'Đang tải danh sách dự án...',
+          noProjects: 'Không tìm thấy dự án',
+          createButton: 'Tạo dự án',
+          saveButton: 'Lưu dự án',
+          cancelButton: 'Hủy',
+          selectGroup: 'Chọn nhóm',
+          loadingGroups: 'Đang tải...',
+          groupLabel: 'Nhóm {{id}}',
+          groupLabelWithLeader: 'Nhóm {{id}} - {{visa}}',
+          projectsTable: 'Dự án',
+        },
+        table: {
+          selection: 'Chọn',
+          number: 'Mã',
+          name: 'Tên',
+          status: 'Trạng thái',
+          customer: 'Khách hàng',
+          startDate: 'Ngày bắt đầu',
+          delete: 'Xóa',
+          selectProject: 'Chọn dự án {{projectNumber}}',
+          deleteProject: 'Xóa dự án {{projectNumber}}',
+        },
+        status: {
+          NEW: 'Mới',
+          PLA: 'Đã lên kế hoạch',
+          INP: 'Đang thực hiện',
+          FIN: 'Hoàn thành',
+        },
+        members: {
+          placeholder: 'DTH, BHU, JHV',
+          searching: 'Đang tìm...',
+          remove: 'Xóa {{visa}}',
+        },
+        validation: {
+          mandatoryFields: 'Vui lòng nhập tất cả các trường bắt buộc (*)',
+          required: 'Bắt buộc',
+        },
+        pagination: {
+          label: 'Phân trang',
+          previous: 'Trang trước',
+          next: 'Trang sau',
+        },
+        error: {
+          fallback: 'Yêu cầu thất bại. Vui lòng kiểm tra backend đang chạy ở port 8080.',
+        },
+      },
+    },
+  },
+  lng: savedLanguage === 'vi' ? 'vi' : 'en',
+  fallbackLng: 'en',
+  interpolation: {
+    escapeValue: false,
+  },
+})
+
+export default i18n
