@@ -11,8 +11,15 @@ export const getAllProjects = async (): Promise<PageResponse<Project>> => {
     return response.data;
 }
 
-export const getProjects = async (params: ProjectSearchParams): Promise<PageResponse<Project>> => {
-    const response = await axiosInstance.get<PageResponse<Project>>("/projects", { params });
+export const searchProjects = async (params: ProjectSearchParams): Promise<PageResponse<Project>> => {
+    const response = await axiosInstance.get<PageResponse<Project>>("/projects/search", {
+        params: {
+            keyword: params.keyword,
+            status: params.status,
+            page: params.page,
+            size: params.size,
+        },
+     });
     return response.data;
 }
 

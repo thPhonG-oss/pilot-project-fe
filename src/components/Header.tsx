@@ -35,7 +35,7 @@ export function Header() {
       <nav className="flex items-center gap-3 text-sm text-slate-400" aria-label={t('app.userActions')}>
         <div className="flex items-center gap-3 mr-16">
         <button
-          className={i18n.language === 'en' ? 'font-semibold text-sky-600' : 'text-sky-600'}
+          className={i18n.language === 'en' ? 'font-semibold text-sky-600' : 'text-slate-600 font-semibold'}
           type="button"
           onClick={() => changeLanguage('en')}
         >
@@ -43,15 +43,15 @@ export function Header() {
         </button>
         <span>|</span>
         <button
-          className={i18n.language === 'vi' ? 'font-semibold text-sky-600' : 'text-sky-600'}
+          className={i18n.language === 'vi' ? 'font-semibold text-sky-600' : 'text-slate-600 font-semibold'}
           type="button"
           onClick={() => changeLanguage('vi')}
         >
           VI
         </button>
         </div>
-        <a className="text-sky-600 no-underline" href="#help">{t('app.help')}</a>
-        <button className="text-slate-400" type="button">{t('app.logout')}</button>
+        <a className="text-sky-600 no-underline font-semibold" href="#help">{t('app.help')}</a>
+        <button className="text-slate-400 font-semibold ml-6" type="button">{t('app.logout')}</button>
       </nav>
     </header>
   )
