@@ -82,6 +82,9 @@ i18n.use(initReactI18next).init({
         },
         pagination: {
           label: 'Pagination',
+          first: 'First page',
+          last: 'Last page',
+          page: 'Page {{page}}',
           previous: 'Previous page',
           next: 'Next page',
         },
@@ -165,6 +168,9 @@ i18n.use(initReactI18next).init({
         },
         pagination: {
           label: 'Phân trang',
+          first: 'Trang đầu',
+          last: 'Trang cuối',
+          page: 'Trang {{page}}',
           previous: 'Trang trước',
           next: 'Trang sau',
         },

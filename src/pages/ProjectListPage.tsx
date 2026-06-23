@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { ProjectFilter } from "../components/ProjectFilter";
+import { Pagination } from "../components/Pagination";
 import { ProjectsTable } from "../components/ProjectsTable";
 import { PROJECT_PAGE_SIZE } from "../constant/project";
 import { resolveApiErrorMessage } from "../services/apiError";
@@ -17,12 +18,17 @@ export function ProjectListPage() {
 
     const { t } = useTranslation();
     const [projects, setProjects] = useState<Project[]>([]);
+    const [totalPages, setTotalPages] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState('')
     const [searchParams, setSearchParams] = useSearchParams()
     const [filters, setFilters] = useState<ProjectFiltersValue>(() => readFilters(searchParams))
     const appliedFilters = useMemo(() => readFilters(searchParams), [searchParams])
     const page = Number(searchParams.get('page') ?? '1') || 1
+
+    useEffect(() => {
+      setFilters(readFilters(searchParams))
+    }, [searchParams])
 
     useEffect(() => {
       let isCurrentRequest = true
@@ -44,12 +50,14 @@ export function ProjectListPage() {
           }
 
           setProjects(response.data ?? [])
+          setTotalPages(Math.max(response.totalPages, 1))
         } catch (error) {
           if (!isCurrentRequest) {
             return
           }
 
           setProjects([])
+          setTotalPages(1)
           setErrorMessage(resolveApiErrorMessage(error))
         } finally {
           if (isCurrentRequest) {
@@ -63,7 +71,7 @@ export function ProjectListPage() {
       return () => {
         isCurrentRequest = false
       }
-    }, [appliedFilters])
+    }, [appliedFilters, page])
 
     function handleSearch() {
       setSearchParams(buildSearchParams({ ...filters, keyword: filters.keyword.trim() }, 1))
@@ -72,6 +80,10 @@ export function ProjectListPage() {
     function handleReset() {
       setFilters(EMPTY_FILTERS)
       setSearchParams({})
+    }
+
+    function handlePageChange(nextPage: number) {
+      setSearchParams(buildSearchParams(appliedFilters, nextPage))
     }
 
 
@@ -94,10 +106,17 @@ export function ProjectListPage() {
         </div>
       )}
       {!errorMessage && (
-        <ProjectsTable
-        projects={projects}
-        isLoading={isLoading}
-      />
+        <>
+          <ProjectsTable
+            projects={projects}
+            isLoading={isLoading}
+          />
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </>
       )}
     </main>
   )
