@@ -62,6 +62,8 @@ i18n.use(initReactI18next).init({
           delete: 'Delete',
           selectProject: 'Select project {{projectNumber}}',
           deleteProject: 'Delete project {{projectNumber}}',
+          itemsSelected: '{{count}} items selected',
+          deleteSelected: 'delete selected items',
         },
         status: {
           NEW: 'New',
@@ -143,6 +145,8 @@ i18n.use(initReactI18next).init({
           delete: 'Xóa',
           selectProject: 'Chọn dự án {{projectNumber}}',
           deleteProject: 'Xóa dự án {{projectNumber}}',
+          itemsSelected: 'Đã chọn {{count}} mục',
+          deleteSelected: 'xóa các mục đã chọn',
         },
         status: {
           NEW: 'Mới',

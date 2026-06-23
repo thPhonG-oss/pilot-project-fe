@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import logoUrl from '../assets/logo.webp'
 import { LANGUAGE_STORAGE_KEY } from '../i18n'
 
@@ -23,13 +24,16 @@ export function Header() {
   return (
     <header className="flex h-[72px] items-center justify-between border-b border-slate-200 bg-white px-8 lg:px-[112px]">
       <div className="flex min-w-0 items-center gap-8">
-        <ElcaLogo />
+        <Link to="/">
+          <ElcaLogo />
+        </Link>
         <strong className="truncate text-[22px] font-semibold text-slate-600">
           {t('app.title')}
         </strong>
       </div>
 
       <nav className="flex items-center gap-3 text-sm text-slate-400" aria-label={t('app.userActions')}>
+        <div className="flex items-center gap-3 mr-16">
         <button
           className={i18n.language === 'en' ? 'font-semibold text-sky-600' : 'text-sky-600'}
           type="button"
@@ -45,6 +49,7 @@ export function Header() {
         >
           VI
         </button>
+        </div>
         <a className="text-sky-600 no-underline" href="#help">{t('app.help')}</a>
         <button className="text-slate-400" type="button">{t('app.logout')}</button>
       </nav>
