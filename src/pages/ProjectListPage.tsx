@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { ProjectFilter } from "../components/ProjectFilter";
 import { Pagination } from "../components/Pagination";
+import { ProjectFilter } from "../components/ProjectFilter";
 import { ProjectsTable } from "../components/ProjectsTable";
 import { PROJECT_PAGE_SIZE } from "../constant/project";
-import { resolveApiErrorMessage } from "../services/apiError";
+import { isCancelledRequest, resolveApiErrorMessage } from "../services/apiError";
 import { searchProjects } from "../services/projects";
 import type { Project, ProjectFilters as ProjectFiltersValue, ProjectStatus } from "../types/project";
 
@@ -31,7 +31,7 @@ export function ProjectListPage() {
     }, [searchParams])
 
     useEffect(() => {
-      let isCurrentRequest = true
+      const controller = new AbortController()
 
       async function loadProjects() {
         setIsLoading(true)
@@ -43,16 +43,12 @@ export function ProjectListPage() {
             status: appliedFilters.status || undefined,
             page,
             size: PROJECT_PAGE_SIZE,
-          })
-
-          if (!isCurrentRequest) {
-            return
-          }
+          }, controller.signal)
 
           setProjects(response.data ?? [])
           setTotalPages(Math.max(response.totalPages, 1))
         } catch (error) {
-          if (!isCurrentRequest) {
+          if (isCancelledRequest(error)) {
             return
           }
 
@@ -60,29 +56,53 @@ export function ProjectListPage() {
           setTotalPages(1)
           setErrorMessage(resolveApiErrorMessage(error))
         } finally {
-          if (isCurrentRequest) {
+          if (!controller.signal.aborted) {
             setIsLoading(false)
           }
         }
       }
 
-      loadProjects()
+      void loadProjects()
 
       return () => {
-        isCurrentRequest = false
+        controller.abort()
       }
     }, [appliedFilters, page])
 
     function handleSearch() {
-      setSearchParams(buildSearchParams({ ...filters, keyword: filters.keyword.trim() }, 1))
+      if (isLoading) {
+        return
+      }
+
+      const nextFilters = { ...filters, keyword: filters.keyword.trim() }
+      const nextParams = buildSearchParams(nextFilters, 1)
+
+      if (areSearchParamsEqual(searchParams, nextParams)) {
+        return
+      }
+
+      setSearchParams(nextParams)
     }
 
     function handleReset() {
+      if (isLoading) {
+        return
+      }
+
+      if (areSearchParamsEqual(searchParams, new URLSearchParams())) {
+        setFilters(EMPTY_FILTERS)
+        return
+      }
+
       setFilters(EMPTY_FILTERS)
       setSearchParams({})
     }
 
     function handlePageChange(nextPage: number) {
+      if (isLoading || nextPage === page) {
+        return
+      }
+
       setSearchParams(buildSearchParams(appliedFilters, nextPage))
     }
 
@@ -95,6 +115,7 @@ export function ProjectListPage() {
 
       <ProjectFilter
       value={filters}
+      isLoading={isLoading}
       onChange={setFilters}
       onSearch={handleSearch}
       onReset={handleReset}
@@ -114,6 +135,7 @@ export function ProjectListPage() {
           <Pagination
             currentPage={page}
             totalPages={totalPages}
+            disabled={isLoading}
             onPageChange={handlePageChange}
           />
         </>
@@ -147,6 +169,10 @@ function buildSearchParams(filters: ProjectFiltersValue, page: number) {
   }
 
   return params
+}
+
+function areSearchParamsEqual(current: URLSearchParams, next: URLSearchParams) {
+  return current.toString() === next.toString()
 }
 
 function isProjectStatus(value: string | null): value is ProjectStatus {

@@ -2,7 +2,15 @@ import axios from 'axios'
 import i18n from '../i18n'
 import type { ApiErrorResponse } from '../types/project'
 
+export function isCancelledRequest(error: unknown) {
+  return axios.isCancel(error) || (axios.isAxiosError(error) && error.code === 'ERR_CANCELED')
+}
+
 export function resolveApiErrorMessage(error: unknown) {
+  if (isCancelledRequest(error)) {
+    return ''
+  }
+
   if (!axios.isAxiosError<ApiErrorResponse>(error)) {
     return i18n.t('error.fallback')
   }

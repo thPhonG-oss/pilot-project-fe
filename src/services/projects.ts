@@ -6,12 +6,10 @@ import type {
     ProjectSearchParams,
 } from "../types/project";
 
-export const getAllProjects = async (): Promise<PageResponse<Project>> => {
-    const response = await axiosInstance.get<PageResponse<Project>>("/projects");
-    return response.data;
-}
-
-export const searchProjects = async (params: ProjectSearchParams): Promise<PageResponse<Project>> => {
+export const searchProjects = async (
+    params: ProjectSearchParams,
+    signal?: AbortSignal,
+): Promise<PageResponse<Project>> => {
     const response = await axiosInstance.get<PageResponse<Project>>("/projects/search", {
         params: {
             keyword: params.keyword,
@@ -19,6 +17,7 @@ export const searchProjects = async (params: ProjectSearchParams): Promise<PageR
             page: params.page,
             size: params.size,
         },
+        signal,
      });
     return response.data;
 }
@@ -27,3 +26,4 @@ export const getProjectById = async (id: number): Promise<Project> => {
     const response = await axiosInstance.get<Project>(`/projects/${id}`);
     return response.data;
 }
+

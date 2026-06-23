@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 type PaginationProps = {
   currentPage: number
   totalPages: number
+  disabled?: boolean
   onPageChange: (page: number) => void
 }
 
@@ -18,7 +19,7 @@ function getVisiblePages(currentPage: number, totalPages: number): number[] {
     .sort((left, right) => left - right)
 }
 
-export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+export function Pagination({ currentPage, totalPages, disabled = false, onPageChange }: PaginationProps) {
   const { t } = useTranslation()
 
   if (totalPages <= 1) {
@@ -34,7 +35,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
           type="button"
           className="h-7 min-w-7 px-1 text-slate-500 hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
           aria-label={t('pagination.first')}
-          disabled={currentPage === 1}
+          disabled={disabled || currentPage === 1}
           onClick={() => onPageChange(1)}
         >
           &laquo;
@@ -49,7 +50,8 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
               {showEllipsis && <span className="px-1 text-slate-400">…</span>}
               <button
                 type="button"
-                className={`h-7 min-w-7 px-2 ${
+                disabled={disabled}
+                className={`h-7 min-w-7 px-2 disabled:cursor-not-allowed disabled:opacity-50 ${
                   page === currentPage
                     ? 'bg-slate-200 font-medium text-slate-700'
                     : 'text-slate-600 hover:bg-slate-100'
@@ -68,7 +70,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
           type="button"
           className="h-7 min-w-7 px-1 text-slate-500 hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
           aria-label={t('pagination.last')}
-          disabled={currentPage === totalPages}
+          disabled={disabled || currentPage === totalPages}
           onClick={() => onPageChange(totalPages)}
         >
           &raquo;

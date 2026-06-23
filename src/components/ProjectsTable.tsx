@@ -1,6 +1,6 @@
-import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FaRegTrashAlt } from "react-icons/fa";
 import type { Project } from "../types/project";
 import { formatProjectDate } from "../utils/dateUtils";
 
@@ -12,15 +12,14 @@ type ProjectsTableProps = {
 export function ProjectsTable({projects, isLoading}: ProjectsTableProps) {
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<number>>(new Set())
   const { t } = useTranslation();
-
-  useEffect(() => {
-    setSelectedProjectIds(new Set());
-  }, [projects]);
-
   const selectedCount = selectedProjectIds.size
   const selectedProjects = projects.filter((project) => selectedProjectIds.has(project.id))
   const canBulkDelete =
     selectedCount > 0 && selectedProjects.every((project) => project.status === 'NEW')
+
+  useEffect(() => {
+    setSelectedProjectIds(new Set());
+  }, [projects]);
 
   const handleSelectProject = (projectId: number, checked: boolean) => {
     setSelectedProjectIds((current) => {
@@ -91,7 +90,7 @@ export function ProjectsTable({projects, isLoading}: ProjectsTableProps) {
                         aria-label={t('table.deleteProject', { projectNumber: project.projectNumber })}
                         className="text-[#d96a5d]"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <FaRegTrashAlt className="h-4 w-4" />
                         </button>
                   )}
                   </td>
@@ -120,7 +119,7 @@ export function ProjectsTable({projects, isLoading}: ProjectsTableProps) {
                           // wire up delete handler in parent when ready
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <FaRegTrashAlt className="h-4 w-4" />
                       </button>
                     )}
                   </td>
