@@ -3,7 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ProjectForm, type ProjectFormValue } from "../components/ProjectForm";
 import { getGroups } from "../services/groups";
-import { createProject, getProjectById, updateProject } from "../services/projects";
+import {
+  createProject,
+  getProjectById,
+  updateProject,
+} from "../services/projects";
 import type {
   GroupOption,
   Project,
@@ -145,7 +149,7 @@ export function ProjectFormPage({ mode }: ProjectFormPageProps) {
   };
 
   return (
-    <main className="max-w-[760px] px-5 py-7 lg:ml-10 lg:px-0">
+    <main className="px-5 py-7 lg:ml-10 lg:px-0 lg:max-w-[880px] md:max-w-[720px] sm:max-w-[640px]">
       <div className="mb-10 border-b border-slate-300">
         <h1 className="mb-4 text-lg font-semibold text-slate-500">
           {mode === "create" ? t("project.newTitle") : t("project.editTitle")}
@@ -205,7 +209,9 @@ function parseVisas(value: string) {
 }
 
 function readProjectGroupId(project: Project) {
-  return String(project.groupId ?? project.groupDto?.id ?? project.group?.id ?? "");
+  return String(
+    project.groupId ?? project.groupDto?.id ?? project.group?.id ?? "",
+  );
 }
 
 function readProjectVisas(project: Project) {

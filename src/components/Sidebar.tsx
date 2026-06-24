@@ -1,16 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { NavLink, useLocation, useMatch } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 export function Sidebar() {
   const { t } = useTranslation();
   const location = useLocation();
-  const isNewProject = Boolean(useMatch("/projects/new"));
-  const isEditProject = Boolean(useMatch("/projects/:projectId/edit"));
   const returnTo = `${location.pathname}${location.search}`;
   const createPath = `/projects/new?returnTo=${encodeURIComponent(returnTo)}`;
-
-  const sectionLabel = isEditProject ? t("nav.edit") : t("nav.new");
-  const isSectionActive = isNewProject || isEditProject;
 
   return (
     <aside
