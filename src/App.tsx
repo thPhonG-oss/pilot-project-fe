@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { Header } from './components/Header.tsx'
 import MainLayout from './components/MainLayout.tsx'
+import { ErrorPage } from './pages/ErrorPage'
 import { ProjectFormPage } from './pages/ProjectFormPage'
 import { ProjectListPage } from './pages/ProjectListPage'
 
@@ -8,6 +10,15 @@ function App() {
   return (
     <>
       <Routes>
+        <Route
+          path="/error"
+          element={(
+            <div className="min-h-screen bg-slate-50 text-slate-600">
+              <Header />
+              <ErrorPage />
+            </div>
+          )}
+        />
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Navigate to="/projects" replace />} />
           <Route path="/projects" element={<ProjectListPage />} />
