@@ -75,11 +75,15 @@ i18n.use(initReactI18next).init({
         members: {
           placeholder: 'DTH, BHU, JHV',
           searching: 'Searching...',
+          noResults: 'No matching employees',
           remove: 'Remove {{visa}}',
         },
         validation: {
           mandatoryFields: 'Please enter all the mandatory fields (*)',
           required: 'Required',
+          dismissError: 'Dismiss error',
+          projectNumberInvalid: 'Project number must be a positive number up to 4 digits',
+          endDateInvalid: 'End date must be later than start date',
         },
         pagination: {
           label: 'Pagination',
@@ -91,6 +95,13 @@ i18n.use(initReactI18next).init({
         },
         error: {
           fallback: 'Request failed. Please make sure the backend is running on port 8080.',
+          unexpected: 'Unexpected error occurred. Please contact your administrator',
+          unexpectedTitle: 'Unexpected error occurred.',
+          unexpectedContact: 'Please contact your administrator',
+          unexpectedWithDetail: 'Unexpected error occurred [{{detail}}]. Please contact your administrator',
+          or: 'or',
+          backToSearch: 'back to search project',
+          projectNotFound: 'Project not found',
         },
       },
     },
@@ -162,11 +173,15 @@ i18n.use(initReactI18next).init({
         members: {
           placeholder: 'DTH, BHU, JHV',
           searching: 'Đang tìm...',
+          noResults: 'Không tìm thấy nhân viên phù hợp',
           remove: 'Xóa {{visa}}',
         },
         validation: {
           mandatoryFields: 'Vui lòng nhập tất cả các trường bắt buộc (*)',
           required: 'Bắt buộc',
+          dismissError: 'Đóng thông báo lỗi',
+          projectNumberInvalid: 'Mã dự án phải là số dương tối đa 4 chữ số',
+          endDateInvalid: 'Ngày kết thúc phải sau ngày bắt đầu',
         },
         pagination: {
           label: 'Phân trang',
@@ -178,6 +193,13 @@ i18n.use(initReactI18next).init({
         },
         error: {
           fallback: 'Yêu cầu thất bại. Vui lòng kiểm tra backend đang chạy ở port 8080.',
+          unexpected: 'Đã xảy ra lỗi không mong muốn. Vui lòng liên hệ quản trị viên',
+          unexpectedTitle: 'Đã xảy ra lỗi không mong muốn.',
+          unexpectedContact: 'Vui lòng liên hệ quản trị viên',
+          unexpectedWithDetail: 'Đã xảy ra lỗi không mong muốn [{{detail}}]. Vui lòng liên hệ quản trị viên',
+          or: 'hoặc',
+          backToSearch: 'quay lại tìm dự án',
+          projectNotFound: 'Không tìm thấy dự án',
         },
       },
     },

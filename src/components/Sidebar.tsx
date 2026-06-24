@@ -32,7 +32,7 @@ export function Sidebar() {
 
       <NavLink
         className={({ isActive }) =>
-          `block whitespace-nowrap text-sm no-underline lg:mb-3 ${
+          `block whitespace-nowrap text-sm no-underline lg:mb-3 hover:text-slate-700 ${
             isActive
               ? "font-semibold text-slate-700"
               : "font-normal text-slate-500"

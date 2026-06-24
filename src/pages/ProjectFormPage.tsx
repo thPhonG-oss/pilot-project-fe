@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ProjectForm, type ProjectFormValue } from "../components/ProjectForm";
+import { ProjectForm } from "../components/ProjectForm";
+import { isCancelledRequest } from "../services/apiError";
+import { getEmployeeSuggestions } from "../services/employees";
 import { getGroups } from "../services/groups";
 import {
   createProject,
@@ -9,11 +11,24 @@ import {
   updateProject,
 } from "../services/projects";
 import type {
+  EmployeeSuggestion,
   GroupOption,
   Project,
   ProjectCreationRequest,
   ProjectUpdateRequest,
 } from "../types/project";
+import type { ProjectFormErrors, ProjectFormValue } from "../types/projectForm";
+import {
+  MAX_MEMBER_SEARCH_KEYWORD_LENGTH,
+  MEMBER_SEARCH_DEBOUNCE_MS,
+  membersToVisas,
+} from "../utils/memberUtils";
+import { resolveReturnTo } from "../utils/navigationUtils";
+import {
+  hasFormErrors,
+  mapApiErrorToFormErrors,
+  validateProjectForm,
+} from "../utils/projectFormUtils";
 
 type ProjectFormPageProps = { mode: "create" | "edit" };
 
@@ -24,30 +39,35 @@ const EMPTY_FORM: ProjectFormValue = {
   status: "NEW",
   startDate: "",
   endDate: "",
-  visas: "",
+  members: [],
   groupId: "",
 };
 
 export function ProjectFormPage({ mode }: ProjectFormPageProps) {
   const { t } = useTranslation();
   const [form, setForm] = useState<ProjectFormValue>(EMPTY_FORM);
+  const [errors, setErrors] = useState<ProjectFormErrors>({});
   const [isLoading, setIsLoading] = useState(mode === "edit");
+  const [loadError, setLoadError] = useState("");
   const [groups, setGroups] = useState<GroupOption[]>([]);
   const [isGroupsLoading, setIsGroupsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [memberSuggestions, setMemberSuggestions] = useState<EmployeeSuggestion[]>([]);
+  const [isSearchingMembers, setIsSearchingMembers] = useState(false);
+  const [memberSearchKeyword, setMemberSearchKeyword] = useState("");
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get("returnTo") || "/projects";
+  const returnTo = resolveReturnTo(searchParams);
 
   const { projectId } = useParams();
   const numericProjectId = Number(projectId);
 
   useEffect(() => {
     if (mode === "create") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(EMPTY_FORM);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setErrors({});
+      setLoadError("");
       setIsLoading(false);
     }
   }, [mode]);
@@ -58,19 +78,21 @@ export function ProjectFormPage({ mode }: ProjectFormPageProps) {
     }
 
     if (!Number.isFinite(numericProjectId) || numericProjectId < 1) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLoadError(t("error.projectNotFound"));
       setIsLoading(false);
       return;
     }
 
-    let isCurrentRequest = true;
+    const controller = new AbortController();
 
     async function loadProject() {
       setIsLoading(true);
+      setLoadError("");
+
       try {
         const project = await getProjectById(numericProjectId);
 
-        if (!isCurrentRequest) {
+        if (controller.signal.aborted) {
           return;
         }
 
@@ -81,13 +103,27 @@ export function ProjectFormPage({ mode }: ProjectFormPageProps) {
           status: project.status ?? "NEW",
           startDate: project.startDate ?? "",
           endDate: project.endDate ?? "",
-          visas: readProjectVisas(project).join(", "),
+          members: readProjectMembers(project),
           groupId: readProjectGroupId(project),
         });
       } catch (error) {
-        console.error(error);
+        if (isCancelledRequest(error)) {
+          return;
+        }
+
+        const mapped = mapApiErrorToFormErrors(error);
+
+        if (mapped.isUnexpected) {
+          navigate("/error", {
+            replace: true,
+            state: { detail: mapped.unexpectedDetail },
+          });
+          return;
+        }
+
+        setLoadError(mapped.errors.form ?? t("error.projectNotFound"));
       } finally {
-        if (isCurrentRequest) {
+        if (!controller.signal.aborted) {
           setIsLoading(false);
         }
       }
@@ -96,79 +132,177 @@ export function ProjectFormPage({ mode }: ProjectFormPageProps) {
     void loadProject();
 
     return () => {
-      isCurrentRequest = false;
+      controller.abort();
     };
-  }, [mode, numericProjectId]);
+  }, [mode, navigate, numericProjectId, t]);
 
   useEffect(() => {
-    let isCurrentRequest = true;
+    const controller = new AbortController();
 
     async function loadGroups() {
       setIsGroupsLoading(true);
+
       try {
-        const response = await getGroups();
+        const response = await getGroups(controller.signal);
         setGroups(response);
       } catch (error) {
-        console.error(error);
+        if (isCancelledRequest(error)) {
+          return;
+        }
+
+        const mapped = mapApiErrorToFormErrors(error);
+
+        if (mapped.isUnexpected) {
+          navigate("/error", {
+            replace: true,
+            state: { detail: mapped.unexpectedDetail },
+          });
+          return;
+        }
+
+        setErrors((current) => ({
+          ...current,
+          form: mapped.errors.form ?? t("error.fallback"),
+        }));
       } finally {
-        if (isCurrentRequest) {
+        if (!controller.signal.aborted) {
           setIsGroupsLoading(false);
         }
       }
     }
-    loadGroups();
+
+    void loadGroups();
 
     return () => {
-      isCurrentRequest = false;
+      controller.abort();
     };
-  }, []);
+  }, [navigate, t]);
+
+  useEffect(() => {
+    const keyword = memberSearchKeyword.slice(0, MAX_MEMBER_SEARCH_KEYWORD_LENGTH);
+
+    if (!keyword) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setIsSearchingMembers(true);
+
+      try {
+        const suggestions = await getEmployeeSuggestions(keyword, controller.signal);
+
+        if (!controller.signal.aborted) {
+          setMemberSuggestions(suggestions);
+        }
+      } catch (error) {
+        if (!isCancelledRequest(error) && !controller.signal.aborted) {
+          setMemberSuggestions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearchingMembers(false);
+        }
+      }
+    }, MEMBER_SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [memberSearchKeyword]);
 
   const handleChange = (nextForm: ProjectFormValue) => {
     setForm(nextForm);
+
+    if (nextForm.members !== form.members) {
+      setErrors((current) => {
+        if (!("visas" in current)) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next.visas;
+        return next;
+      });
+    }
+  };
+
+  const handleDismissGlobalError = () => {
+    setErrors((current) => {
+      const next = { ...current };
+      delete next.form;
+      return next;
+    });
   };
 
   const handleSubmit = async () => {
+    const validationErrors = validateProjectForm(form, mode);
+    setErrors(validationErrors);
+
+    if (hasFormErrors(validationErrors)) {
+      return;
+    }
+
     setIsSubmitting(true);
+
     try {
       if (mode === "create") {
-        const request = toCreateProjectRequest(form);
-        const response = await createProject(request);
-        console.log(response);
+        await createProject(toCreateProjectRequest(form));
+      } else {
+        await updateProject(numericProjectId, toUpdateProjectRequest(form));
       }
-      if (mode === "edit") {
-        const request = toUpdateProjectRequest(form);
-        const response = await updateProject(numericProjectId, request);
-        console.log(response);
-      }
+
       navigate(returnTo);
     } catch (error) {
-      console.error(error);
+      if (isCancelledRequest(error)) {
+        return;
+      }
+
+      const mapped = mapApiErrorToFormErrors(error);
+
+      if (mapped.isUnexpected) {
+        navigate("/error", {
+          state: { detail: mapped.unexpectedDetail },
+        });
+        return;
+      }
+
+      setErrors(mapped.errors);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="px-5 py-7 lg:ml-10 lg:px-0 lg:max-w-[880px] md:max-w-[720px] sm:max-w-[640px]">
+    <main className="px-5 py-7 sm:max-w-[640px] md:max-w-[720px] lg:ml-10 lg:max-w-[880px] lg:px-0">
       <div className="mb-10 border-b border-slate-300">
         <h1 className="mb-4 text-lg font-semibold text-slate-500">
           {mode === "create" ? t("project.newTitle") : t("project.editTitle")}
         </h1>
       </div>
+
       {isLoading ? (
-        <div className="flex justify-center items-center h-full">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500"></div>
+        <p className="text-sm text-slate-500">{t("project.loading")}</p>
+      ) : loadError ? (
+        <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {loadError}
         </div>
       ) : (
         <ProjectForm
           mode={mode}
           value={form}
+          errors={errors}
           groups={groups}
           isGroupsLoading={isGroupsLoading}
           isSubmitting={isSubmitting}
+          memberSuggestions={memberSearchKeyword ? memberSuggestions : []}
+          isSearchingMembers={memberSearchKeyword ? isSearchingMembers : false}
+          onMemberSearchKeywordChange={setMemberSearchKeyword}
           onSubmit={handleSubmit}
           onChange={handleChange}
           onCancel={() => navigate(returnTo)}
+          onDismissGlobalError={handleDismissGlobalError}
         />
       )}
     </main>
@@ -184,7 +318,7 @@ function toCreateProjectRequest(
     customer: form.customer.trim(),
     startDate: form.startDate,
     endDate: form.endDate || null,
-    visas: parseVisas(form.visas),
+    visas: membersToVisas(form.members),
     groupId: Number(form.groupId),
   };
 }
@@ -196,16 +330,9 @@ function toUpdateProjectRequest(form: ProjectFormValue): ProjectUpdateRequest {
     status: form.status,
     startDate: form.startDate,
     endDate: form.endDate || null,
-    visas: parseVisas(form.visas),
+    visas: membersToVisas(form.members),
     groupId: Number(form.groupId),
   };
-}
-
-function parseVisas(value: string) {
-  return value
-    .split(",")
-    .map((visa) => visa.trim().toUpperCase())
-    .filter(Boolean);
 }
 
 function readProjectGroupId(project: Project) {
@@ -214,12 +341,19 @@ function readProjectGroupId(project: Project) {
   );
 }
 
-function readProjectVisas(project: Project) {
-  if (project.visas?.length) {
-    return project.visas;
+function readProjectMembers(project: Project): EmployeeSuggestion[] {
+  const employees = readProjectEmployees(project);
+
+  if (employees.length > 0) {
+    return employees;
   }
 
-  return readProjectEmployees(project).map((employee) => employee.visa);
+  return (project.visas ?? []).map((visa, index) => ({
+    id: index,
+    visa,
+    firstName: "",
+    lastName: "",
+  }));
 }
 
 function readProjectEmployees(project: Project) {
