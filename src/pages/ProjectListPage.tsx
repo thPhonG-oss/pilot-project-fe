@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { Pagination } from "../components/Pagination";
 import { ProjectFilter } from "../components/ProjectFilter";
 import { ProjectsTable } from "../components/ProjectsTable";
@@ -25,6 +25,8 @@ export function ProjectListPage() {
     const [filters, setFilters] = useState<ProjectFiltersValue>(() => readFilters(searchParams))
     const appliedFilters = useMemo(() => readFilters(searchParams), [searchParams])
     const page = Number(searchParams.get('page') ?? '1') || 1
+    const location = useLocation()
+    const returnTo = `${location.pathname}${location.search}`
 
     useEffect(() => {
       setFilters(readFilters(searchParams))
@@ -131,6 +133,7 @@ export function ProjectListPage() {
           <ProjectsTable
             projects={projects}
             isLoading={isLoading}
+            getEditPath={(project) => `/projects/${project.id}/edit?returnTo=${encodeURIComponent(returnTo)}`}
           />
           <Pagination
             currentPage={page}

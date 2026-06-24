@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaRegTrashAlt } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import type { Project } from "../types/project";
 import { formatProjectDate } from "../utils/dateUtils";
 
 type ProjectsTableProps = {
     projects: Project[],
     isLoading: boolean,
+    getEditPath: (project: Project) => string
 }
 
-export function ProjectsTable({projects, isLoading}: ProjectsTableProps) {
+export function ProjectsTable({projects, isLoading, getEditPath}: ProjectsTableProps) {
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<number>>(new Set())
   const { t } = useTranslation();
   const selectedCount = selectedProjectIds.size
@@ -75,7 +77,9 @@ export function ProjectsTable({projects, isLoading}: ProjectsTableProps) {
                     />
                   </td>
                   <td className="h-10 border-r border-t border-slate-200 px-3 text-right">
-                      {project.projectNumber}
+                       <Link className="font-semibold text-sky-700 no-underline hover:underline" to={getEditPath(project)}>
+                              {project.projectNumber}
+                       </Link>
                   </td>
                   <td className="h-10 border-r border-t border-slate-200 px-4">{project.name}</td>
                   <td className="h-10 border-r border-t border-slate-200 px-4">
