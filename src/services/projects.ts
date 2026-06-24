@@ -27,8 +27,13 @@ export const searchProjects = async (
   return response.data;
 };
 
-export const getProjectById = async (id: number): Promise<Project> => {
-  const response = await axiosInstance.get<Project>(`/projects/${id}`);
+export const getProjectById = async (
+  id: number,
+  signal?: AbortSignal,
+): Promise<Project> => {
+  const response = await axiosInstance.get<Project>(`/projects/${id}`, {
+    signal,
+  });
   return response.data;
 };
 
