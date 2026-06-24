@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ProjectForm, type ProjectFormValue } from "../components/ProjectForm";
 import { getGroups } from "../services/groups";
-import { createProject } from "../services/projects";
-import type { GroupOption, ProjectCreationRequest } from "../types/project";
+import { createProject, getProjectById, updateProject } from "../services/projects";
+import type {
+  GroupOption,
+  Project,
+  ProjectCreationRequest,
+  ProjectUpdateRequest,
+} from "../types/project";
 
 type ProjectFormPageProps = { mode: "create" | "edit" };
 
@@ -31,12 +36,65 @@ export function ProjectFormPage({ mode }: ProjectFormPageProps) {
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/projects";
 
+  const { projectId } = useParams();
+  const numericProjectId = Number(projectId);
+
   useEffect(() => {
     if (mode === "create") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(EMPTY_FORM);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
     }
   }, [mode]);
+
+  useEffect(() => {
+    if (mode !== "edit") {
+      return;
+    }
+
+    if (!Number.isFinite(numericProjectId) || numericProjectId < 1) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsLoading(false);
+      return;
+    }
+
+    let isCurrentRequest = true;
+
+    async function loadProject() {
+      setIsLoading(true);
+      try {
+        const project = await getProjectById(numericProjectId);
+
+        if (!isCurrentRequest) {
+          return;
+        }
+
+        setForm({
+          projectNumber: String(project.projectNumber ?? ""),
+          name: project.name ?? "",
+          customer: project.customer ?? "",
+          status: project.status ?? "NEW",
+          startDate: project.startDate ?? "",
+          endDate: project.endDate ?? "",
+          visas: readProjectVisas(project).join(", "),
+          groupId: readProjectGroupId(project),
+        });
+      } catch (error) {
+        console.error(error);
+      } finally {
+        if (isCurrentRequest) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadProject();
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [mode, numericProjectId]);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -71,6 +129,11 @@ export function ProjectFormPage({ mode }: ProjectFormPageProps) {
       if (mode === "create") {
         const request = toCreateProjectRequest(form);
         const response = await createProject(request);
+        console.log(response);
+      }
+      if (mode === "edit") {
+        const request = toUpdateProjectRequest(form);
+        const response = await updateProject(numericProjectId, request);
         console.log(response);
       }
       navigate(returnTo);
@@ -122,9 +185,37 @@ function toCreateProjectRequest(
   };
 }
 
+function toUpdateProjectRequest(form: ProjectFormValue): ProjectUpdateRequest {
+  return {
+    name: form.name.trim(),
+    customer: form.customer.trim(),
+    status: form.status,
+    startDate: form.startDate,
+    endDate: form.endDate || null,
+    visas: parseVisas(form.visas),
+    groupId: Number(form.groupId),
+  };
+}
+
 function parseVisas(value: string) {
   return value
     .split(",")
     .map((visa) => visa.trim().toUpperCase())
     .filter(Boolean);
+}
+
+function readProjectGroupId(project: Project) {
+  return String(project.groupId ?? project.groupDto?.id ?? project.group?.id ?? "");
+}
+
+function readProjectVisas(project: Project) {
+  if (project.visas?.length) {
+    return project.visas;
+  }
+
+  return readProjectEmployees(project).map((employee) => employee.visa);
+}
+
+function readProjectEmployees(project: Project) {
+  return project.employeeDtos ?? project.employees ?? [];
 }
