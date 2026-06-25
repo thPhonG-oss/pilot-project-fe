@@ -22,17 +22,23 @@ export function ProjectsTable({
   onRequestDeleteProject,
   onRequestBulkDelete,
 }: ProjectsTableProps) {
-  const [selectedProjectIds, setSelectedProjectIds] = useState<Set<number>>(new Set());
+  const [selectedProjectIds, setSelectedProjectIds] = useState<Set<number>>(
+    new Set(),
+  );
   const selectAllRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
-  const visibleProjectIds = useMemo(() => projects.map((project) => project.id), [projects]);
+  const visibleProjectIds = useMemo(
+    () => projects.map((project) => project.id),
+    [projects],
+  );
   const selectedCount = selectedProjectIds.size;
   const selectedProjects = useMemo(
     () => projects.filter((project) => selectedProjectIds.has(project.id)),
     [projects, selectedProjectIds],
   );
   const canBulkDelete =
-    selectedCount > 0 && selectedProjects.every((project) => project.status === "NEW");
+    selectedCount > 0 &&
+    selectedProjects.every((project) => project.status === "NEW");
   const blockedBulkNumbers = useMemo(
     () =>
       selectedProjects
@@ -41,7 +47,8 @@ export function ProjectsTable({
         .join(", "),
     [selectedProjects],
   );
-  const hasBlockedBulkSelection = selectedCount > 0 && blockedBulkNumbers.length > 0;
+  const hasBlockedBulkSelection =
+    selectedCount > 0 && blockedBulkNumbers.length > 0;
   const allVisibleSelected =
     visibleProjectIds.length > 0 &&
     visibleProjectIds.every((projectId) => selectedProjectIds.has(projectId));
@@ -105,12 +112,24 @@ export function ProjectsTable({
                 onChange={(event) => handleSelectAll(event.target.checked)}
               />
             </th>
-            <th className="h-8 w-20 border-b border-r border-slate-200 px-3 font-semibold">{t("table.number")}</th>
-            <th className="h-8 border-b border-r border-slate-200 px-4 font-semibold">{t("table.name")}</th>
-            <th className="h-8 w-32 border-b border-r border-slate-200 px-4 font-semibold">{t("table.status")}</th>
-            <th className="h-8 w-56 border-b border-r border-slate-200 px-4 font-semibold">{t("table.customer")}</th>
-            <th className="h-8 w-28 border-b border-r border-slate-200 px-4 font-semibold">{t("table.startDate")}</th>
-            <th className="h-8 w-16 border-b border-slate-200 px-3 text-center font-semibold">{t("table.delete")}</th>
+            <th className="h-8 w-20 border-b border-r border-slate-200 px-3 font-semibold">
+              {t("table.number")}
+            </th>
+            <th className="h-8 border-b border-r border-slate-200 px-4 font-semibold">
+              {t("table.name")}
+            </th>
+            <th className="h-8 w-32 border-b border-r border-slate-200 px-4 font-semibold">
+              {t("table.status")}
+            </th>
+            <th className="h-8 w-56 border-b border-r border-slate-200 px-4 font-semibold">
+              {t("table.customer")}
+            </th>
+            <th className="h-8 w-28 border-b border-r border-slate-200 px-4 font-semibold">
+              {t("table.startDate")}
+            </th>
+            <th className="h-8 w-16 border-b border-slate-200 px-3 text-center font-semibold">
+              {t("table.delete")}
+            </th>
           </tr>
         </thead>
 
@@ -137,10 +156,14 @@ export function ProjectsTable({
                 <td className="h-10 border-r border-t border-slate-200 px-2 text-center">
                   <input
                     type="checkbox"
-                    aria-label={t("table.selectProject", { projectNumber: project.projectNumber })}
+                    aria-label={t("table.selectProject", {
+                      projectNumber: project.projectNumber,
+                    })}
                     checked={selectedProjectIds.has(project.id)}
                     disabled={isDeleting}
-                    onChange={(event) => handleSelectProject(project.id, event.target.checked)}
+                    onChange={(event) =>
+                      handleSelectProject(project.id, event.target.checked)
+                    }
                   />
                 </td>
                 <td className="h-10 border-r border-t border-slate-200 px-3 text-right">
@@ -151,11 +174,15 @@ export function ProjectsTable({
                     {project.projectNumber}
                   </Link>
                 </td>
-                <td className="h-10 border-r border-t border-slate-200 px-4">{project.name}</td>
+                <td className="h-10 border-r border-t border-slate-200 px-4">
+                  {project.name}
+                </td>
                 <td className="h-10 border-r border-t border-slate-200 px-4">
                   {t(`status.${project.status}`)}
                 </td>
-                <td className="h-10 border-r border-t border-slate-200 px-4">{project.customer}</td>
+                <td className="h-10 border-r border-t border-slate-200 px-4">
+                  {project.customer}
+                </td>
                 <td className="h-10 border-r border-t border-slate-200 px-4">
                   {formatProjectDate(project.startDate)}
                 </td>
@@ -163,7 +190,9 @@ export function ProjectsTable({
                   {project.status === "NEW" && (
                     <button
                       type="button"
-                      aria-label={t("table.deleteProject", { projectNumber: project.projectNumber })}
+                      aria-label={t("table.deleteProject", {
+                        projectNumber: project.projectNumber,
+                      })}
                       className="text-[#d96a5d] disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={isDeleting}
                       onClick={() => onRequestDeleteProject(project)}
@@ -177,13 +206,26 @@ export function ProjectsTable({
 
           {!isLoading && selectedCount > 0 && (
             <tr className="bg-sky-50 text-sm">
-              <td colSpan={6} className="border-t border-r border-slate-200 px-4 py-2">
+              <td
+                colSpan={6}
+                className="border-t border-r border-slate-200 px-4 py-2"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <span className="font-medium text-sky-600">
                     {t("table.itemsSelected", { count: selectedCount })}
                   </span>
                   {canBulkDelete && (
-                    <span className="text-[#d96a5d]">{t("table.deleteSelected")}</span>
+                    <button
+                      type="button"
+                      aria-label={t("table.deleteSelected")}
+                      className="text-[#d96a5d] disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={isDeleting}
+                      onClick={() => onRequestBulkDelete(selectedProjects)}
+                    >
+                      <span className="text-[#d96a5d] hover:text-[#ff7777] hover:underline">
+                        {t("table.deleteSelected")}
+                      </span>
+                    </button>
                   )}
                   {hasBlockedBulkSelection && (
                     <span className="text-right text-[#d96a5d]">
@@ -199,7 +241,7 @@ export function ProjectsTable({
                     aria-label={t("table.deleteSelected")}
                     className="text-[#d96a5d] disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={isDeleting}
-                    onClick={() => onRequestBulkDelete(selectedProjects)}
+                    onClick={() => {}}
                   >
                     <FaRegTrashAlt className="h-4 w-4" />
                   </button>

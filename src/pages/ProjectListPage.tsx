@@ -12,8 +12,16 @@ import {
   resolveApiErrorMessage,
   resolveDeleteErrorMessage,
 } from "../services/apiError";
-import { deleteProject, deleteProjects, searchProjects } from "../services/projects";
-import type { Project, ProjectFilters as ProjectFiltersValue, ProjectStatus } from "../types/project";
+import {
+  deleteProject,
+  deleteProjects,
+  searchProjects,
+} from "../services/projects";
+import type {
+  Project,
+  ProjectFilters as ProjectFiltersValue,
+  ProjectStatus,
+} from "../types/project";
 
 const EMPTY_FILTERS: ProjectFiltersValue = {
   keyword: "",
@@ -31,11 +39,18 @@ export function ProjectListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
+    null,
+  );
   const [refreshToken, setRefreshToken] = useState(0);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [filters, setFilters] = useState<ProjectFiltersValue>(() => readFilters(searchParams));
-  const appliedFilters = useMemo(() => readFilters(searchParams), [searchParams]);
+  const [filters, setFilters] = useState<ProjectFiltersValue>(() =>
+    readFilters(searchParams),
+  );
+  const appliedFilters = useMemo(
+    () => readFilters(searchParams),
+    [searchParams],
+  );
   const page = Number(searchParams.get("page") ?? "1") || 1;
   const location = useLocation();
   const returnTo = `${location.pathname}${location.search}`;
@@ -202,9 +217,11 @@ export function ProjectListPage() {
     : null;
 
   return (
-    <main className="max-w-[1010px] px-5 py-8 lg:ml-10 lg:px-0">
+    <main className="max-w-[90%] px-5 py-8 lg:ml-10 lg:px-0">
       <div className="mb-4 border-b border-slate-300">
-        <h1 className="mb-3 text-base font-semibold text-slate-500">{t("project.listTitle")}</h1>
+        <h1 className="mb-3 text-base font-semibold text-slate-500">
+          {t("project.listTitle")}
+        </h1>
       </div>
 
       <ProjectFilter
@@ -290,5 +307,7 @@ function areSearchParamsEqual(current: URLSearchParams, next: URLSearchParams) {
 }
 
 function isProjectStatus(value: string | null): value is ProjectStatus {
-  return value === "NEW" || value === "PLA" || value === "INP" || value === "FIN";
+  return (
+    value === "NEW" || value === "PLA" || value === "INP" || value === "FIN"
+  );
 }
