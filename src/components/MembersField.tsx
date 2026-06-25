@@ -1,10 +1,13 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { EmployeeSuggestion } from '../types/project'
 import {
   addMember,
+  addMembersFromManualInput,
+  commitManualVisaToken,
   filterMemberSuggestions,
   formatMemberLabel,
+  isValidVisaToken,
   removeMember,
 } from '../utils/memberUtils'
 
@@ -43,6 +46,38 @@ export function MembersField({
     onSearchKeywordChange(value.trim())
   }
 
+  const handleInputChange = (value: string) => {
+    if (value.includes(',')) {
+      const { members: nextMembers, remainder } = addMembersFromManualInput(
+        members,
+        value,
+      )
+
+      if (nextMembers !== members) {
+        onChange(nextMembers)
+      }
+
+      updateSearchText(remainder)
+      return
+    }
+
+    updateSearchText(value)
+  }
+
+  const commitPendingToken = () => {
+    if (!trimmedSearch) {
+      return
+    }
+
+    const nextMembers = commitManualVisaToken(members, trimmedSearch)
+
+    if (nextMembers !== members) {
+      onChange(nextMembers)
+    }
+
+    updateSearchText('')
+  }
+
   const handleSelect = (employee: EmployeeSuggestion) => {
     onChange(addMember(members, employee))
     updateSearchText('')
@@ -52,6 +87,36 @@ export function MembersField({
   const handleRemove = (visa: string) => {
     onChange(removeMember(members, visa))
     inputRef.current?.focus()
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+
+      if (visibleSuggestions.length === 1) {
+        handleSelect(visibleSuggestions[0])
+        return
+      }
+
+      commitPendingToken()
+      return
+    }
+
+    if (
+      event.key === 'Backspace' &&
+      searchText === '' &&
+      members.length > 0
+    ) {
+      onChange(removeMember(members, members[members.length - 1].visa))
+    }
+  }
+
+  const handleBlur = () => {
+    if (trimmedSearch && isValidVisaToken(trimmedSearch)) {
+      commitPendingToken()
+    }
+
+    setIsFocused(false)
   }
 
   return (
@@ -84,10 +149,12 @@ export function MembersField({
           ref={inputRef}
           type="text"
           className="min-w-[80px] flex-1 border-0 bg-transparent px-1 py-0.5 text-sm text-slate-700 outline-none"
+          placeholder={members.length === 0 ? t('members.placeholder') : undefined}
           value={searchText}
-          onChange={(event) => updateSearchText(event.target.value)}
+          onChange={(event) => handleInputChange(event.target.value)}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
           autoComplete="off"
           aria-autocomplete="list"
           aria-expanded={showDropdown}
