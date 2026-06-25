@@ -61,6 +61,56 @@ export function hasFormErrors(errors: ProjectFormErrors): boolean {
   return Boolean(errors.form) || Object.keys(errors).some((key) => key !== 'form')
 }
 
+const TRACKED_FORM_FIELDS: (keyof ProjectFormValue)[] = [
+  'projectNumber',
+  'name',
+  'customer',
+  'groupId',
+  'status',
+  'startDate',
+  'endDate',
+  'members',
+]
+
+export function clearErrorsOnChange(
+  previous: ProjectFormValue,
+  next: ProjectFormValue,
+  errors: ProjectFormErrors,
+): ProjectFormErrors {
+  if (!hasFormErrors(errors)) {
+    return errors
+  }
+
+  let changed = false
+  const nextErrors = { ...errors }
+
+  for (const field of TRACKED_FORM_FIELDS) {
+    if (field === 'members') {
+      if (previous.members !== next.members && 'visas' in nextErrors) {
+        delete nextErrors.visas
+        changed = true
+      }
+      continue
+    }
+
+    if (previous[field] !== next[field] && field in nextErrors) {
+      delete nextErrors[field]
+      changed = true
+    }
+  }
+
+  if (!changed) {
+    return errors
+  }
+
+  const hasFieldErrors = Object.keys(nextErrors).some((key) => key !== 'form')
+  if (!hasFieldErrors && nextErrors.form) {
+    delete nextErrors.form
+  }
+
+  return nextErrors
+}
+
 export function mapApiErrorToFormErrors(error: unknown): {
   errors: ProjectFormErrors
   isUnexpected: boolean
