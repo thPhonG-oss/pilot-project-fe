@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router-dom";
+import { buildReturnTo } from "../utils/navigationUtils";
 
 export function Sidebar() {
   const { t } = useTranslation();
   const location = useLocation();
-  const returnTo = `${location.pathname}${location.search}`;
+  const returnTo = buildReturnTo(location);
   const createPath = `/projects/new?returnTo=${encodeURIComponent(returnTo)}`;
 
   return (
