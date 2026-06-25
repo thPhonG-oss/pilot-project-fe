@@ -47,6 +47,10 @@ export type ProjectSearchParams = {
   size: number
 }
 
+export type ProjectDeleteRequest = {
+  ids: number[]
+}
+
 export type ProjectCreationRequest = {
   projectNumber: number
   name: string

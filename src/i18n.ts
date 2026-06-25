@@ -55,6 +55,7 @@ i18n.use(initReactI18next).init({
         },
         table: {
           selection: 'Selection',
+          selectAll: 'Select all projects on this page',
           number: 'Number',
           name: 'Name',
           status: 'Status',
@@ -65,6 +66,16 @@ i18n.use(initReactI18next).init({
           deleteProject: 'Delete project {{projectNumber}}',
           itemsSelected: '{{count}} items selected',
           deleteSelected: 'delete selected items',
+        },
+        delete: {
+          notAllowed:
+            'Only projects with status New can be deleted. Project number(s): {{numbers}}.',
+          confirmTitle: 'Confirm delete',
+          confirmSingle: 'Are you sure you want to delete project {{projectNumber}}?',
+          confirmBulk: 'Are you sure you want to delete {{count}} selected project(s)?',
+          confirmButton: 'Delete',
+          successSingle: 'Project {{projectNumber}} deleted successfully.',
+          successBulk: '{{count}} project(s) deleted successfully.',
         },
         status: {
           NEW: 'New',
@@ -153,6 +164,7 @@ i18n.use(initReactI18next).init({
         },
         table: {
           selection: 'Chọn',
+          selectAll: 'Chọn tất cả dự án trên trang này',
           number: 'Mã',
           name: 'Tên',
           status: 'Trạng thái',
@@ -163,6 +175,16 @@ i18n.use(initReactI18next).init({
           deleteProject: 'Xóa dự án {{projectNumber}}',
           itemsSelected: 'Đã chọn {{count}} mục',
           deleteSelected: 'xóa các mục đã chọn',
+        },
+        delete: {
+          notAllowed:
+            'Chỉ có thể xóa dự án có trạng thái New. Mã dự án: {{numbers}}.',
+          confirmTitle: 'Xác nhận xóa',
+          confirmSingle: 'Bạn có chắc muốn xóa dự án {{projectNumber}}?',
+          confirmBulk: 'Bạn có chắc muốn xóa {{count}} dự án đã chọn?',
+          confirmButton: 'Xóa',
+          successSingle: 'Đã xóa dự án {{projectNumber}} thành công.',
+          successBulk: 'Đã xóa {{count}} dự án thành công.',
         },
         status: {
           NEW: 'Mới',

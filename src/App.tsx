@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import { Header } from './components/Header.tsx'
 import MainLayout from './components/MainLayout.tsx'
 import { ErrorPage } from './pages/ErrorPage'
@@ -9,6 +10,7 @@ function App() {
 
   return (
     <>
+      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
       <Routes>
         <Route
           path="/error"

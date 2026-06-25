@@ -1,126 +1,214 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useLocation, useSearchParams } from "react-router-dom";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Pagination } from "../components/Pagination";
 import { ProjectFilter } from "../components/ProjectFilter";
 import { ProjectsTable } from "../components/ProjectsTable";
 import { PROJECT_PAGE_SIZE } from "../constant/project";
-import { isCancelledRequest, resolveApiErrorMessage } from "../services/apiError";
-import { searchProjects } from "../services/projects";
+import {
+  isCancelledRequest,
+  resolveApiErrorMessage,
+  resolveDeleteErrorMessage,
+} from "../services/apiError";
+import { deleteProject, deleteProjects, searchProjects } from "../services/projects";
 import type { Project, ProjectFilters as ProjectFiltersValue, ProjectStatus } from "../types/project";
 
 const EMPTY_FILTERS: ProjectFiltersValue = {
-  keyword: '',
-  status: '',
-}
+  keyword: "",
+  status: "",
+};
+
+type PendingDelete =
+  | { type: "single"; project: Project }
+  | { type: "bulk"; projects: Project[] };
 
 export function ProjectListPage() {
+  const { t } = useTranslation();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filters, setFilters] = useState<ProjectFiltersValue>(() => readFilters(searchParams));
+  const appliedFilters = useMemo(() => readFilters(searchParams), [searchParams]);
+  const page = Number(searchParams.get("page") ?? "1") || 1;
+  const location = useLocation();
+  const returnTo = `${location.pathname}${location.search}`;
 
-    const { t } = useTranslation();
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [totalPages, setTotalPages] = useState(1);
-    const [isLoading, setIsLoading] = useState(true);
-    const [errorMessage, setErrorMessage] = useState('')
-    const [searchParams, setSearchParams] = useSearchParams()
-    const [filters, setFilters] = useState<ProjectFiltersValue>(() => readFilters(searchParams))
-    const appliedFilters = useMemo(() => readFilters(searchParams), [searchParams])
-    const page = Number(searchParams.get('page') ?? '1') || 1
-    const location = useLocation()
-    const returnTo = `${location.pathname}${location.search}`
+  useEffect(() => {
+    setFilters(readFilters(searchParams));
+  }, [searchParams]);
 
-    useEffect(() => {
-      setFilters(readFilters(searchParams))
-    }, [searchParams])
+  useEffect(() => {
+    const controller = new AbortController();
 
-    useEffect(() => {
-      const controller = new AbortController()
+    async function loadProjects() {
+      setIsLoading(true);
+      setErrorMessage("");
 
-      async function loadProjects() {
-        setIsLoading(true)
-        setErrorMessage('')
-
-        try {
-          const response = await searchProjects({
+      try {
+        const response = await searchProjects(
+          {
             keyword: appliedFilters.keyword.trim(),
             status: appliedFilters.status || undefined,
             page,
             size: PROJECT_PAGE_SIZE,
-          }, controller.signal)
+          },
+          controller.signal,
+        );
 
-          setProjects(response.data ?? [])
-          setTotalPages(Math.max(response.totalPages, 1))
-        } catch (error) {
-          if (isCancelledRequest(error)) {
-            return
-          }
+        const nextProjects = response.data ?? [];
+        const nextTotalPages = Math.max(response.totalPages, 1);
 
-          setProjects([])
-          setTotalPages(1)
-          setErrorMessage(resolveApiErrorMessage(error))
-        } finally {
-          if (!controller.signal.aborted) {
-            setIsLoading(false)
-          }
+        if (nextProjects.length === 0 && page > 1 && nextTotalPages < page) {
+          setSearchParams(buildSearchParams(appliedFilters, page - 1));
+          return;
+        }
+
+        setProjects(nextProjects);
+        setTotalPages(nextTotalPages);
+      } catch (error) {
+        if (isCancelledRequest(error)) {
+          return;
+        }
+
+        setProjects([]);
+        setTotalPages(1);
+        setErrorMessage(resolveApiErrorMessage(error));
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
         }
       }
-
-      void loadProjects()
-
-      return () => {
-        controller.abort()
-      }
-    }, [appliedFilters, page])
-
-    function handleSearch() {
-      if (isLoading) {
-        return
-      }
-
-      const nextFilters = { ...filters, keyword: filters.keyword.trim() }
-      const nextParams = buildSearchParams(nextFilters, 1)
-
-      if (areSearchParamsEqual(searchParams, nextParams)) {
-        return
-      }
-
-      setSearchParams(nextParams)
     }
 
-    function handleReset() {
-      if (isLoading) {
-        return
-      }
+    void loadProjects();
 
-      if (areSearchParamsEqual(searchParams, new URLSearchParams())) {
-        setFilters(EMPTY_FILTERS)
-        return
-      }
+    return () => {
+      controller.abort();
+    };
+  }, [appliedFilters, page, refreshToken, setSearchParams]);
 
-      setFilters(EMPTY_FILTERS)
-      setSearchParams({})
+  const refetchProjects = useCallback(() => {
+    setRefreshToken((current) => current + 1);
+  }, []);
+
+  function handleSearch() {
+    if (isLoading) {
+      return;
     }
 
-    function handlePageChange(nextPage: number) {
-      if (isLoading || nextPage === page) {
-        return
-      }
+    const nextFilters = { ...filters, keyword: filters.keyword.trim() };
+    const nextParams = buildSearchParams(nextFilters, 1);
 
-      setSearchParams(buildSearchParams(appliedFilters, nextPage))
+    if (areSearchParamsEqual(searchParams, nextParams)) {
+      return;
     }
 
+    setSearchParams(nextParams);
+  }
 
-    return (
+  function handleReset() {
+    if (isLoading) {
+      return;
+    }
+
+    if (areSearchParamsEqual(searchParams, new URLSearchParams())) {
+      setFilters(EMPTY_FILTERS);
+      return;
+    }
+
+    setFilters(EMPTY_FILTERS);
+    setSearchParams({});
+  }
+
+  function handlePageChange(nextPage: number) {
+    if (isLoading || nextPage === page) {
+      return;
+    }
+
+    setSearchParams(buildSearchParams(appliedFilters, nextPage));
+  }
+
+  function handleRequestDeleteProject(project: Project) {
+    setPendingDelete({ type: "single", project });
+  }
+
+  function handleRequestBulkDelete(selectedProjects: Project[]) {
+    setPendingDelete({ type: "bulk", projects: selectedProjects });
+  }
+
+  async function handleConfirmDelete() {
+    if (!pendingDelete) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      if (pendingDelete.type === "single") {
+        await deleteProject(pendingDelete.project.id);
+        toast.success(
+          t("delete.successSingle", {
+            projectNumber: pendingDelete.project.projectNumber,
+          }),
+        );
+      } else {
+        const ids = pendingDelete.projects.map((project) => project.id);
+        await deleteProjects(ids);
+        toast.success(
+          t("delete.successBulk", {
+            count: pendingDelete.projects.length,
+          }),
+        );
+      }
+
+      setPendingDelete(null);
+      refetchProjects();
+    } catch (error) {
+      const message = resolveDeleteErrorMessage(error);
+
+      if (message) {
+        toast.error(message);
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  const confirmDialog = pendingDelete
+    ? pendingDelete.type === "single"
+      ? {
+          title: t("delete.confirmTitle"),
+          message: t("delete.confirmSingle", {
+            projectNumber: pendingDelete.project.projectNumber,
+          }),
+        }
+      : {
+          title: t("delete.confirmTitle"),
+          message: t("delete.confirmBulk", {
+            count: pendingDelete.projects.length,
+          }),
+        }
+    : null;
+
+  return (
     <main className="max-w-[1010px] px-5 py-8 lg:ml-10 lg:px-0">
       <div className="mb-4 border-b border-slate-300">
-        <h1 className="mb-3 text-base font-semibold text-slate-500">{t('project.listTitle')}</h1>
+        <h1 className="mb-3 text-base font-semibold text-slate-500">{t("project.listTitle")}</h1>
       </div>
 
       <ProjectFilter
-      value={filters}
-      isLoading={isLoading}
-      onChange={setFilters}
-      onSearch={handleSearch}
-      onReset={handleReset}
+        value={filters}
+        isLoading={isLoading || isDeleting}
+        onChange={setFilters}
+        onSearch={handleSearch}
+        onReset={handleReset}
       />
 
       {errorMessage && (
@@ -133,51 +221,70 @@ export function ProjectListPage() {
           <ProjectsTable
             projects={projects}
             isLoading={isLoading}
-            getEditPath={(project) => `/projects/${project.id}/edit?returnTo=${encodeURIComponent(returnTo)}`}
+            isDeleting={isDeleting}
+            getEditPath={(project) =>
+              `/projects/${project.id}/edit?returnTo=${encodeURIComponent(returnTo)}`
+            }
+            onRequestDeleteProject={handleRequestDeleteProject}
+            onRequestBulkDelete={handleRequestBulkDelete}
           />
           <Pagination
             currentPage={page}
             totalPages={totalPages}
-            disabled={isLoading}
+            disabled={isLoading || isDeleting}
             onPageChange={handlePageChange}
           />
         </>
       )}
+
+      <ConfirmDialog
+        isOpen={pendingDelete != null}
+        title={confirmDialog?.title ?? ""}
+        message={confirmDialog?.message ?? ""}
+        confirmLabel={t("delete.confirmButton")}
+        isConfirming={isDeleting}
+        onConfirm={() => void handleConfirmDelete()}
+        onCancel={() => {
+          if (!isDeleting) {
+            setPendingDelete(null);
+          }
+        }}
+      />
     </main>
-  )
+  );
 }
 
 function readFilters(searchParams: URLSearchParams): ProjectFiltersValue {
-  const status = searchParams.get('status')
+  const status = searchParams.get("status");
 
   return {
-    keyword: searchParams.get('keyword') ?? '',
-    status: isProjectStatus(status) ? status : '',
-  }
+    keyword: searchParams.get("keyword") ?? "",
+    status: isProjectStatus(status) ? status : "",
+  };
 }
 
 function buildSearchParams(filters: ProjectFiltersValue, page: number) {
-  const params = new URLSearchParams()
+  const params = new URLSearchParams();
 
   if (filters.keyword) {
-    params.set('keyword', filters.keyword)
+    params.set("keyword", filters.keyword);
   }
 
   if (filters.status) {
-    params.set('status', filters.status)
+    params.set("status", filters.status);
   }
 
   if (page > 1) {
-    params.set('page', String(page))
+    params.set("page", String(page));
   }
 
-  return params
+  return params;
 }
 
 function areSearchParamsEqual(current: URLSearchParams, next: URLSearchParams) {
-  return current.toString() === next.toString()
+  return current.toString() === next.toString();
 }
 
 function isProjectStatus(value: string | null): value is ProjectStatus {
-  return value === 'NEW' || value === 'PLA' || value === 'INP' || value === 'FIN'
+  return value === "NEW" || value === "PLA" || value === "INP" || value === "FIN";
 }

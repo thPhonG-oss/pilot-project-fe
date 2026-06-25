@@ -4,6 +4,7 @@ import type {
   PageResponse,
   Project,
   ProjectCreationRequest,
+  ProjectDeleteRequest,
   ProjectSearchParams,
   ProjectUpdateRequest,
 } from "../types/project";
@@ -50,4 +51,13 @@ export const updateProject = async (
 ): Promise<Project> => {
   const response = await axiosInstance.put<Project>(`/projects/${id}`, payload);
   return response.data;
+};
+
+export const deleteProject = async (id: number): Promise<void> => {
+  await axiosInstance.delete(`/projects/${id}`);
+};
+
+export const deleteProjects = async (ids: number[]): Promise<void> => {
+  const payload: ProjectDeleteRequest = { ids };
+  await axiosInstance.delete("/projects", { data: payload });
 };
