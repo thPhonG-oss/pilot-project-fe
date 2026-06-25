@@ -20,13 +20,10 @@ export function ErrorPage() {
           ×
         </div>
         <div>
-          <h1 className="mb-2 text-2xl font-semibold text-slate-700">
-            {t('error.unexpectedTitle')}
-          </h1>
-          <p className="mb-1 text-lg text-orange-600">
+          <p className="mb-4 text-lg text-orange-600">
             {detail
               ? t('error.unexpectedWithDetail', { detail })
-              : t('error.unexpectedContact')}
+              : t('error.unexpected')}
           </p>
           <p className="text-base text-slate-600">
             {t('error.or')}{' '}

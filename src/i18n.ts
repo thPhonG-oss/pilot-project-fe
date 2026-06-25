@@ -107,6 +107,7 @@ i18n.use(initReactI18next).init({
         error: {
           fallback: 'Request failed. Please make sure the backend is running on port 8080.',
           unexpected: 'Unexpected error occurred. Please contact your administrator',
+          network: 'The service is temporarily unavailable',
           unexpectedTitle: 'Unexpected error occurred.',
           unexpectedContact: 'Please contact your administrator',
           unexpectedWithDetail: 'Unexpected error occurred [{{detail}}]. Please contact your administrator',
@@ -216,6 +217,7 @@ i18n.use(initReactI18next).init({
         error: {
           fallback: 'Yêu cầu thất bại. Vui lòng kiểm tra backend đang chạy ở port 8080.',
           unexpected: 'Đã xảy ra lỗi không mong muốn. Vui lòng liên hệ quản trị viên',
+          network: 'Dịch vụ tạm thời không khả dụng',
           unexpectedTitle: 'Đã xảy ra lỗi không mong muốn.',
           unexpectedContact: 'Vui lòng liên hệ quản trị viên',
           unexpectedWithDetail: 'Đã xảy ra lỗi không mong muốn [{{detail}}]. Vui lòng liên hệ quản trị viên',

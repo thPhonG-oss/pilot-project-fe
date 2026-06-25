@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { ProjectFormValue } from '../types/projectForm'
 import i18n from '../i18n'
+import { isUnexpectedApiError, resolveUnexpectedErrorDetail } from '../services/apiError'
 import type { ApiErrorResponse } from '../types/project'
 import type { ProjectFormErrors, ProjectFormField } from '../types/projectForm'
 
@@ -116,28 +117,25 @@ export function mapApiErrorToFormErrors(error: unknown): {
   isUnexpected: boolean
   unexpectedDetail?: string
 } {
-  if (!axios.isAxiosError<ApiErrorResponse>(error)) {
-    return {
-      errors: { form: i18n.t('error.fallback') },
-      isUnexpected: true,
-      unexpectedDetail: i18n.t('error.fallback'),
-    }
-  }
-
-  const status = error.response?.status
-  const response = error.response?.data
-
-  if (status !== undefined && status >= 500) {
+  if (isUnexpectedApiError(error)) {
     return {
       errors: {},
       isUnexpected: true,
-      unexpectedDetail: response?.message ?? i18n.t('error.unexpected'),
+      unexpectedDetail: resolveUnexpectedErrorDetail(error) ?? undefined,
     }
   }
 
+  if (!axios.isAxiosError<ApiErrorResponse>(error)) {
+    return {
+      errors: {},
+      isUnexpected: true,
+    }
+  }
+
+  const response = error.response?.data
   const fieldErrors: ProjectFormErrors = {}
   const code = response?.code
-  const message = response?.message ?? i18n.t('error.fallback')
+  const message = response?.message ?? i18n.t('error.unexpected')
 
   if (code === '1002') {
     fieldErrors.projectNumber = message

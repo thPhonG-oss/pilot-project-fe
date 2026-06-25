@@ -171,6 +171,10 @@ export function ProjectListPage() {
       setPendingDelete(null);
       refetchProjects();
     } catch (error) {
+      if (isCancelledRequest(error)) {
+        return;
+      }
+
       const message = resolveDeleteErrorMessage(error);
 
       if (message) {
