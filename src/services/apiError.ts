@@ -52,52 +52,94 @@ export function resolveUnexpectedErrorDetail(error: unknown): string | null {
   return null
 }
 
+const DELETE_NOT_ALLOWED_CODE = '1007'
+
 export function isDeleteNotAllowedError(
   error: unknown,
 ): error is import('axios').AxiosError<ApiErrorResponse> {
   return (
     axios.isAxiosError<ApiErrorResponse>(error) &&
-    error.response?.data?.code === '1007'
+    error.response?.data?.code === DELETE_NOT_ALLOWED_CODE
   )
 }
 
-export function resolveDeleteErrorMessage(error: unknown) {
+/**
+ * Single source of truth for turning any error thrown by an API call into a normalized shape.
+ * Every page-level error handler (banner, toast, inline form fields) builds on top of this
+ * instead of re-deriving "is this unexpected" / "what are the field errors" itself.
+ */
+export type ParsedApiError = {
+  isUnexpected: boolean
+  /** Only set when isUnexpected is true; short detail suitable for the /error page. */
+  unexpectedDetail?: string
+  code?: string
+  message: string
+  /** Backend field name -> message, built from response.details. Empty when backend sent none. */
+  fieldErrors: Record<string, string>
+}
+
+export function parseApiError(error: unknown): ParsedApiError {
+  if (isUnexpectedApiError(error)) {
+    const unexpectedDetail = resolveUnexpectedErrorDetail(error) ?? undefined
+    return {
+      isUnexpected: true,
+      unexpectedDetail,
+      message: unexpectedDetail ?? i18n.t('error.unexpected'),
+      fieldErrors: {},
+    }
+  }
+
+  if (!axios.isAxiosError<ApiErrorResponse>(error)) {
+    return { isUnexpected: true, message: i18n.t('error.unexpected'), fieldErrors: {} }
+  }
+
+  const response = error.response?.data
+  const fieldErrors: Record<string, string> = {}
+
+  for (const detail of response?.details ?? []) {
+    if (detail.field && detail.message) {
+      fieldErrors[detail.field] = detail.message
+    }
+  }
+
+  return {
+    isUnexpected: false,
+    code: response?.code,
+    message: response?.message ?? i18n.t('error.unexpected'),
+    fieldErrors,
+  }
+}
+
+export function resolveDeleteErrorMessage(error: unknown): string {
   if (isCancelledRequest(error)) {
     return ''
   }
 
-  const unexpectedDetail = resolveUnexpectedErrorDetail(error)
-  if (unexpectedDetail !== null) {
-    return unexpectedDetail
+  const parsed = parseApiError(error)
+  if (parsed.isUnexpected) {
+    return parsed.message
   }
 
-  if (isDeleteNotAllowedError(error)) {
-    return error.response?.data?.message ?? i18n.t('delete.notAllowed', { numbers: '' })
+  if (parsed.code === DELETE_NOT_ALLOWED_CODE) {
+    const rawMessage = axios.isAxiosError<ApiErrorResponse>(error)
+      ? error.response?.data?.message
+      : undefined
+    return rawMessage ?? i18n.t('delete.notAllowed', { numbers: '' })
   }
 
   return resolveApiErrorMessage(error)
 }
 
-export function resolveApiErrorMessage(error: unknown) {
+export function resolveApiErrorMessage(error: unknown): string {
   if (isCancelledRequest(error)) {
     return ''
   }
 
-  const unexpectedDetail = resolveUnexpectedErrorDetail(error)
-  if (unexpectedDetail !== null) {
-    return unexpectedDetail
+  const parsed = parseApiError(error)
+  if (parsed.isUnexpected) {
+    return parsed.message
   }
 
-  if (!axios.isAxiosError<ApiErrorResponse>(error)) {
-    return i18n.t('error.unexpected')
-  }
-
-  const response = error.response?.data
-  const fieldMessages = response?.details?.map((detail) => detail.message).filter(Boolean)
-
-  if (fieldMessages?.length) {
-    return fieldMessages.join('\n')
-  }
-
-  return response?.message ?? i18n.t('error.unexpected')
+  const fieldMessages = Object.values(parsed.fieldErrors)
+  return fieldMessages.length ? fieldMessages.join('\n') : parsed.message
 }

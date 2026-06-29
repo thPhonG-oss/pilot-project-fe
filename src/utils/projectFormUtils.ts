@@ -1,9 +1,10 @@
-import axios from 'axios'
 import type { ProjectFormValue } from '../types/projectForm'
 import i18n from '../i18n'
-import { isUnexpectedApiError, resolveUnexpectedErrorDetail } from '../services/apiError'
-import type { ApiErrorResponse } from '../types/project'
+import { parseApiError } from '../services/apiError'
 import type { ProjectFormErrors, ProjectFormField } from '../types/projectForm'
+
+/** Business codes whose field message already restates the top-level message; skip the redundant banner. */
+const SUPPRESS_BANNER_CODES = new Set(['1002', '1003', '1004'])
 
 const CREATE_MANDATORY_FIELDS: ProjectFormField[] = [
   'projectNumber',
@@ -117,62 +118,30 @@ export function mapApiErrorToFormErrors(error: unknown): {
   isUnexpected: boolean
   unexpectedDetail?: string
 } {
-  if (isUnexpectedApiError(error)) {
-    return {
-      errors: {},
-      isUnexpected: true,
-      unexpectedDetail: resolveUnexpectedErrorDetail(error) ?? undefined,
-    }
+  const parsed = parseApiError(error)
+
+  if (parsed.isUnexpected) {
+    return { errors: {}, isUnexpected: true, unexpectedDetail: parsed.unexpectedDetail }
   }
 
-  if (!axios.isAxiosError<ApiErrorResponse>(error)) {
-    return {
-      errors: {},
-      isUnexpected: true,
-    }
-  }
-
-  const response = error.response?.data
   const fieldErrors: ProjectFormErrors = {}
-  const code = response?.code
-  const message = response?.message ?? i18n.t('error.unexpected')
+  for (const [backendField, message] of Object.entries(parsed.fieldErrors)) {
+    const field = mapBackendFieldName(backendField)
 
-  if (code === '1002') {
-    fieldErrors.projectNumber = message
-    return { errors: fieldErrors, isUnexpected: false }
-  }
-
-  if (code === '1003') {
-    fieldErrors.endDate = message
-    return { errors: fieldErrors, isUnexpected: false }
-  }
-
-  if (code === '1004') {
-    fieldErrors.visas = message
-    return { errors: fieldErrors, isUnexpected: false }
-  }
-
-  if (code === '1010') {
-    return { errors: { form: message }, isUnexpected: false }
-  }
-
-  if (response?.details?.length) {
-    for (const detail of response.details) {
-      const field = mapBackendFieldName(detail.field)
-
-      if (field) {
-        fieldErrors[field] = detail.message
-      }
+    if (field) {
+      fieldErrors[field] = message
     }
-
-    fieldErrors.form = message
-    return { errors: fieldErrors, isUnexpected: false }
   }
 
-  return {
-    errors: { form: message },
-    isUnexpected: false,
+  if (Object.keys(fieldErrors).length === 0) {
+    return { errors: { form: parsed.message }, isUnexpected: false }
   }
+
+  if (!parsed.code || !SUPPRESS_BANNER_CODES.has(parsed.code)) {
+    fieldErrors.form = parsed.message
+  }
+
+  return { errors: fieldErrors, isUnexpected: false }
 }
 
 function mapBackendFieldName(field: string): ProjectFormField | 'visas' | undefined {
