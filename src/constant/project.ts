@@ -6,6 +6,7 @@ export const PROJECT_SORTABLE_FIELDS = [
   'projectNumber',
   'name',
   'status',
+  'customer',
   'startDate',
 ] as const
 

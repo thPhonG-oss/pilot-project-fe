@@ -146,9 +146,15 @@ export function ProjectsTable({
               className="h-8 w-32 border-b border-r border-slate-200 px-4 font-semibold"
               onSortChange={onSortChange}
             />
-            <th className="h-8 w-56 border-b border-r border-slate-200 px-4 font-semibold">
-              {t("table.customer")}
-            </th>
+            <SortableColumnHeader
+              label={t("table.customer")}
+              field="customer"
+              sortBy={sortBy}
+              sortAsc={sortAsc}
+              disabled={isLoading || isDeleting}
+              className="h-8 w-56 border-b border-r border-slate-200 px-4 font-semibold"
+              onSortChange={onSortChange}
+            />
             <SortableColumnHeader
               label={t("table.startDate")}
               field="startDate"
