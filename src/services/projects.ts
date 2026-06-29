@@ -19,6 +19,12 @@ export const searchProjects = async (
       params: {
         keyword: params.keyword,
         status: params.status,
+        leaderVisa: params.leaderVisa,
+        memberVisa: params.memberVisa,
+        startDateFrom: params.startDateFrom,
+        startDateTo: params.startDateTo,
+        endDateFrom: params.endDateFrom,
+        endDateTo: params.endDateTo,
         page: params.page,
         size: params.size,
         sortBy: params.sortBy,

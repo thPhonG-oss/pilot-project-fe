@@ -26,6 +26,12 @@ import type {
 const EMPTY_FILTERS: ProjectFiltersValue = {
   keyword: "",
   status: "",
+  leaderVisa: "",
+  memberVisa: "",
+  startDateFrom: "",
+  startDateTo: "",
+  endDateFrom: "",
+  endDateTo: "",
 };
 
 type PendingDelete =
@@ -72,6 +78,12 @@ export function ProjectListPage() {
           {
             keyword: appliedFilters.keyword.trim(),
             status: appliedFilters.status || undefined,
+            leaderVisa: appliedFilters.leaderVisa || undefined,
+            memberVisa: appliedFilters.memberVisa || undefined,
+            startDateFrom: appliedFilters.startDateFrom || undefined,
+            startDateTo: appliedFilters.startDateTo || undefined,
+            endDateFrom: appliedFilters.endDateFrom || undefined,
+            endDateTo: appliedFilters.endDateTo || undefined,
             page,
             size: PROJECT_PAGE_SIZE,
             sortBy: appliedSort.sortBy,
@@ -308,6 +320,12 @@ function readFilters(searchParams: URLSearchParams): ProjectFiltersValue {
   return {
     keyword: searchParams.get("keyword") ?? "",
     status: isProjectStatus(status) ? status : "",
+    leaderVisa: searchParams.get("leaderVisa") ?? "",
+    memberVisa: searchParams.get("memberVisa") ?? "",
+    startDateFrom: searchParams.get("startDateFrom") ?? "",
+    startDateTo: searchParams.get("startDateTo") ?? "",
+    endDateFrom: searchParams.get("endDateFrom") ?? "",
+    endDateTo: searchParams.get("endDateTo") ?? "",
   };
 }
 
@@ -338,6 +356,30 @@ function buildSearchParams(
 
   if (filters.status) {
     params.set("status", filters.status);
+  }
+
+  if (filters.leaderVisa) {
+    params.set("leaderVisa", filters.leaderVisa);
+  }
+
+  if (filters.memberVisa) {
+    params.set("memberVisa", filters.memberVisa);
+  }
+
+  if (filters.startDateFrom) {
+    params.set("startDateFrom", filters.startDateFrom);
+  }
+
+  if (filters.startDateTo) {
+    params.set("startDateTo", filters.startDateTo);
+  }
+
+  if (filters.endDateFrom) {
+    params.set("endDateFrom", filters.endDateFrom);
+  }
+
+  if (filters.endDateTo) {
+    params.set("endDateTo", filters.endDateTo);
   }
 
   if (page > 1) {

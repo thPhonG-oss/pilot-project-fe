@@ -44,6 +44,12 @@ export type PageResponse<T> = {
 export type ProjectSearchParams = {
   keyword?: string
   status?: ProjectStatus
+  leaderVisa?: string
+  memberVisa?: string
+  startDateFrom?: string
+  startDateTo?: string
+  endDateFrom?: string
+  endDateTo?: string
   page: number
   size: number
   sortBy: string
@@ -78,6 +84,12 @@ export type ProjectUpdateRequest = {
 export type ProjectFilters = {
   keyword: string
   status: '' | ProjectStatus
+  leaderVisa: string
+  memberVisa: string
+  startDateFrom: string
+  startDateTo: string
+  endDateFrom: string
+  endDateTo: string
 }
 
 export type ApiErrorResponse = {
