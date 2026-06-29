@@ -9,6 +9,7 @@ export type ProjectFormValue = {
   endDate: string
   members: EmployeeSuggestion[]
   groupId: string
+  version: number | null
 }
 
 export type ProjectFormField = keyof ProjectFormValue

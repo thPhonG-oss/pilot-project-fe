@@ -21,6 +21,8 @@ export const searchProjects = async (
         status: params.status,
         page: params.page,
         size: params.size,
+        sortBy: params.sortBy,
+        asc: params.asc,
       },
       signal,
     },

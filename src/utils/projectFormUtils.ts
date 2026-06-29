@@ -152,6 +152,10 @@ export function mapApiErrorToFormErrors(error: unknown): {
     return { errors: fieldErrors, isUnexpected: false }
   }
 
+  if (code === '1010') {
+    return { errors: { form: message }, isUnexpected: false }
+  }
+
   if (response?.details?.length) {
     for (const detail of response.details) {
       const field = mapBackendFieldName(detail.field)

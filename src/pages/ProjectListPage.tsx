@@ -6,7 +6,7 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Pagination } from "../components/Pagination";
 import { ProjectFilter } from "../components/ProjectFilter";
 import { ProjectsTable } from "../components/ProjectsTable";
-import { PROJECT_PAGE_SIZE } from "../constant/project";
+import { PROJECT_PAGE_SIZE, DEFAULT_PROJECT_SORT, isProjectSortField, type ProjectSort, type ProjectSortField } from "../constant/project";
 import {
   isCancelledRequest,
   resolveApiErrorMessage,
@@ -51,6 +51,7 @@ export function ProjectListPage() {
     () => readFilters(searchParams),
     [searchParams],
   );
+  const appliedSort = useMemo(() => readSort(searchParams), [searchParams]);
   const page = Number(searchParams.get("page") ?? "1") || 1;
   const location = useLocation();
   const returnTo = `${location.pathname}${location.search}`;
@@ -73,6 +74,8 @@ export function ProjectListPage() {
             status: appliedFilters.status || undefined,
             page,
             size: PROJECT_PAGE_SIZE,
+            sortBy: appliedSort.sortBy,
+            asc: appliedSort.asc,
           },
           controller.signal,
         );
@@ -81,7 +84,7 @@ export function ProjectListPage() {
         const nextTotalPages = Math.max(response.totalPages, 1);
 
         if (nextProjects.length === 0 && page > 1 && nextTotalPages < page) {
-          setSearchParams(buildSearchParams(appliedFilters, page - 1));
+          setSearchParams(buildSearchParams(appliedFilters, page - 1, appliedSort));
           return;
         }
 
@@ -107,7 +110,7 @@ export function ProjectListPage() {
     return () => {
       controller.abort();
     };
-  }, [appliedFilters, page, refreshToken, setSearchParams]);
+  }, [appliedFilters, appliedSort, page, refreshToken, setSearchParams]);
 
   const refetchProjects = useCallback(() => {
     setRefreshToken((current) => current + 1);
@@ -119,9 +122,10 @@ export function ProjectListPage() {
     }
 
     const nextFilters = { ...filters, keyword: filters.keyword.trim() };
-    const nextParams = buildSearchParams(nextFilters, 1);
+    const nextParams = buildSearchParams(nextFilters, 1, appliedSort);
 
     if (areSearchParamsEqual(searchParams, nextParams)) {
+      refetchProjects();
       return;
     }
 
@@ -135,6 +139,7 @@ export function ProjectListPage() {
 
     if (areSearchParamsEqual(searchParams, new URLSearchParams())) {
       setFilters(EMPTY_FILTERS);
+      refetchProjects();
       return;
     }
 
@@ -147,7 +152,26 @@ export function ProjectListPage() {
       return;
     }
 
-    setSearchParams(buildSearchParams(appliedFilters, nextPage));
+    setSearchParams(buildSearchParams(appliedFilters, nextPage, appliedSort));
+  }
+
+  function handleSortChange(field: ProjectSortField) {
+    if (isLoading || isDeleting) {
+      return;
+    }
+
+    const nextSort: ProjectSort = {
+      sortBy: field,
+      asc: appliedSort.sortBy === field ? !appliedSort.asc : true,
+    };
+    const nextParams = buildSearchParams(appliedFilters, 1, nextSort);
+
+    if (areSearchParamsEqual(searchParams, nextParams)) {
+      refetchProjects();
+      return;
+    }
+
+    setSearchParams(nextParams);
   }
 
   function handleRequestDeleteProject(project: Project) {
@@ -243,6 +267,9 @@ export function ProjectListPage() {
             projects={projects}
             isLoading={isLoading}
             isDeleting={isDeleting}
+            sortBy={appliedSort.sortBy}
+            sortAsc={appliedSort.asc}
+            onSortChange={handleSortChange}
             getEditPath={(project) =>
               `/projects/${project.id}/edit?returnTo=${encodeURIComponent(returnTo)}`
             }
@@ -284,7 +311,25 @@ function readFilters(searchParams: URLSearchParams): ProjectFiltersValue {
   };
 }
 
-function buildSearchParams(filters: ProjectFiltersValue, page: number) {
+function readSort(searchParams: URLSearchParams): ProjectSort {
+  const sortBy = searchParams.get("sortBy");
+  const ascParam = searchParams.get("asc");
+
+  if (isProjectSortField(sortBy)) {
+    return {
+      sortBy,
+      asc: ascParam !== "false",
+    };
+  }
+
+  return DEFAULT_PROJECT_SORT;
+}
+
+function buildSearchParams(
+  filters: ProjectFiltersValue,
+  page: number,
+  sort: ProjectSort = DEFAULT_PROJECT_SORT,
+) {
   const params = new URLSearchParams();
 
   if (filters.keyword) {
@@ -297,6 +342,14 @@ function buildSearchParams(filters: ProjectFiltersValue, page: number) {
 
   if (page > 1) {
     params.set("page", String(page));
+  }
+
+  if (
+    sort.sortBy !== DEFAULT_PROJECT_SORT.sortBy ||
+    sort.asc !== DEFAULT_PROJECT_SORT.asc
+  ) {
+    params.set("sortBy", sort.sortBy);
+    params.set("asc", String(sort.asc));
   }
 
   return params;

@@ -16,6 +16,7 @@ export const EMPTY_PROJECT_FORM: ProjectFormValue = {
   endDate: '',
   members: [],
   groupId: '',
+  version: null,
 }
 
 export function mapProjectToFormValue(project: Project): ProjectFormValue {
@@ -28,6 +29,7 @@ export function mapProjectToFormValue(project: Project): ProjectFormValue {
     endDate: project.endDate ?? '',
     members: readProjectMembers(project),
     groupId: readProjectGroupId(project),
+    version: project.version ?? null,
   }
 }
 
@@ -48,6 +50,10 @@ export function toCreateProjectRequest(
 export function toUpdateProjectRequest(
   form: ProjectFormValue,
 ): ProjectUpdateRequest {
+  if (form.version == null) {
+    throw new Error('Project version is required for update')
+  }
+
   return {
     name: form.name.trim(),
     customer: form.customer.trim(),
@@ -56,6 +62,7 @@ export function toUpdateProjectRequest(
     endDate: form.endDate || null,
     visas: membersToVisas(form.members),
     groupId: Number(form.groupId),
+    version: form.version,
   }
 }
 

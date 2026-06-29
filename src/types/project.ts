@@ -14,6 +14,7 @@ export type Project = {
   visas?: string[]
   employees?: EmployeeSuggestion[]
   employeeDtos?: EmployeeSuggestion[]
+  version?: number | null
 }
 
 export type EmployeeSuggestion = {
@@ -45,6 +46,8 @@ export type ProjectSearchParams = {
   status?: ProjectStatus
   page: number
   size: number
+  sortBy: string
+  asc: boolean
 }
 
 export type ProjectDeleteRequest = {
@@ -69,6 +72,7 @@ export type ProjectUpdateRequest = {
   endDate?: string | null
   visas: string[]
   groupId: number
+  version: number
 }
 
 export type ProjectFilters = {

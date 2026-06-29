@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import type { ProjectSortField } from "../constant/project";
 import type { Project } from "../types/project";
 import { formatProjectDate } from "../utils/dateUtils";
 
@@ -9,6 +10,9 @@ type ProjectsTableProps = {
   projects: Project[];
   isLoading: boolean;
   isDeleting?: boolean;
+  sortBy: ProjectSortField;
+  sortAsc: boolean;
+  onSortChange: (field: ProjectSortField) => void;
   getEditPath: (project: Project) => string;
   onRequestDeleteProject: (project: Project) => void;
   onRequestBulkDelete: (projects: Project[]) => void;
@@ -18,6 +22,9 @@ export function ProjectsTable({
   projects,
   isLoading,
   isDeleting = false,
+  sortBy,
+  sortAsc,
+  onSortChange,
   getEditPath,
   onRequestDeleteProject,
   onRequestBulkDelete,
@@ -112,21 +119,45 @@ export function ProjectsTable({
                 onChange={(event) => handleSelectAll(event.target.checked)}
               />
             </th>
-            <th className="h-8 w-20 border-b border-r border-slate-200 px-3 font-semibold">
-              {t("table.number")}
-            </th>
-            <th className="h-8 border-b border-r border-slate-200 px-4 font-semibold">
-              {t("table.name")}
-            </th>
-            <th className="h-8 w-32 border-b border-r border-slate-200 px-4 font-semibold">
-              {t("table.status")}
-            </th>
+            <SortableColumnHeader
+              label={t("table.number")}
+              field="projectNumber"
+              sortBy={sortBy}
+              sortAsc={sortAsc}
+              disabled={isLoading || isDeleting}
+              className="h-8 w-20 border-b border-r border-slate-200 px-3 font-semibold"
+              onSortChange={onSortChange}
+            />
+            <SortableColumnHeader
+              label={t("table.name")}
+              field="name"
+              sortBy={sortBy}
+              sortAsc={sortAsc}
+              disabled={isLoading || isDeleting}
+              className="h-8 border-b border-r border-slate-200 px-4 font-semibold"
+              onSortChange={onSortChange}
+            />
+            <SortableColumnHeader
+              label={t("table.status")}
+              field="status"
+              sortBy={sortBy}
+              sortAsc={sortAsc}
+              disabled={isLoading || isDeleting}
+              className="h-8 w-32 border-b border-r border-slate-200 px-4 font-semibold"
+              onSortChange={onSortChange}
+            />
             <th className="h-8 w-56 border-b border-r border-slate-200 px-4 font-semibold">
               {t("table.customer")}
             </th>
-            <th className="h-8 w-28 border-b border-r border-slate-200 px-4 font-semibold">
-              {t("table.startDate")}
-            </th>
+            <SortableColumnHeader
+              label={t("table.startDate")}
+              field="startDate"
+              sortBy={sortBy}
+              sortAsc={sortAsc}
+              disabled={isLoading || isDeleting}
+              className="h-8 w-28 border-b border-r border-slate-200 px-4 font-semibold"
+              onSortChange={onSortChange}
+            />
             <th className="h-8 w-16 border-b border-slate-200 px-3 text-center font-semibold">
               {t("table.delete")}
             </th>
@@ -252,5 +283,57 @@ export function ProjectsTable({
         </tbody>
       </table>
     </section>
+  );
+}
+
+type SortableColumnHeaderProps = {
+  label: string;
+  field: ProjectSortField;
+  sortBy: ProjectSortField;
+  sortAsc: boolean;
+  disabled?: boolean;
+  className: string;
+  onSortChange: (field: ProjectSortField) => void;
+};
+
+function SortableColumnHeader({
+  label,
+  field,
+  sortBy,
+  sortAsc,
+  disabled = false,
+  className,
+  onSortChange,
+}: SortableColumnHeaderProps) {
+  const { t } = useTranslation();
+  const isActive = sortBy === field;
+
+  return (
+    <th
+      className={className}
+      aria-sort={isActive ? (sortAsc ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        className="inline-flex w-full items-center gap-1 text-left text-slate-500 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={disabled}
+        onClick={() => onSortChange(field)}
+      >
+        <span>{label}</span>
+        <span className="text-xs text-sky-600" aria-hidden="true">
+          {isActive ? (sortAsc ? "▲" : "▼") : "↕"}
+        </span>
+        <span className="sr-only">
+          {isActive
+            ? t("table.sortActive", {
+                column: label,
+                direction: sortAsc
+                  ? t("table.sortAscending")
+                  : t("table.sortDescending"),
+              })
+            : t("table.sortByColumn", { column: label })}
+        </span>
+      </button>
+    </th>
   );
 }

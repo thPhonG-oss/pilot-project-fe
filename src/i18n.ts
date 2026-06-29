@@ -66,6 +66,10 @@ i18n.use(initReactI18next).init({
           deleteProject: "Delete project {{projectNumber}}",
           itemsSelected: "{{count}} items selected",
           deleteSelected: "delete selected items",
+          sortByColumn: "Sort by {{column}}",
+          sortActive: "{{column}}, sorted {{direction}}",
+          sortAscending: "ascending",
+          sortDescending: "descending",
         },
         delete: {
           notAllowed: "Only projects with status New can be deleted.",
@@ -181,6 +185,10 @@ i18n.use(initReactI18next).init({
           deleteProject: "Xóa dự án {{projectNumber}}",
           itemsSelected: "Đã chọn {{count}} mục",
           deleteSelected: "xóa các mục đã chọn",
+          sortByColumn: "Sắp xếp theo {{column}}",
+          sortActive: "{{column}}, đang sắp xếp {{direction}}",
+          sortAscending: "tăng dần",
+          sortDescending: "giảm dần",
         },
         delete: {
           notAllowed:
